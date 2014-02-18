@@ -29,15 +29,13 @@ void readfile (char* filename){
 		//Acknowledge
 		ACK gotit(recieved.blocknum);
 		agent->send(gotit.toString(), gotit.size);
-		
 	} while (datalen==512);
 	
 }
 
-void writefile(char* 
 
 int main(){
-	agent = new udpAgent("127.0.0.1", 4546);
+	agent = new udpAgent("127.0.0.1", 5555);
 	readfile("hello");
 	return 0;
 }

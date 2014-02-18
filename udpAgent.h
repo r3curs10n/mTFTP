@@ -58,7 +58,6 @@ public:
 	size_t recv(char* buf, int len){
 		socklen_t sl=sizeof(serv_addr);
 		size_t n = recvfrom(soc, buf, len, 0, (struct sockaddr*) &serv_addr, &sl);
-		cout<<">>"<<ntohs(serv_addr.sin_port)<<endl;
 		if (n==0) closed = true;
 		if (n==-1) throw string("Failed to recieve message");
 		return n; 
