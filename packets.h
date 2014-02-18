@@ -132,7 +132,7 @@ struct DATA {
 		packet = NULL;
 		data = malloc(1024);
 		strncpy(data, _data, _datalen);
-		data[datalen] = 0;
+		data[strlen(data)] = 0;
 		blocknum = _blocknum;
 		datalen = _datalen;
 		opcode = (unsigned short) 3;

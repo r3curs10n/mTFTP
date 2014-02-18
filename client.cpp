@@ -102,6 +102,7 @@ void readfile (char* filename){
 		ACK gotit(recieved.blocknum);
 		agent->send(gotit.toString(), gotit.size);
 		alarm(TIMEOUT);
+		printf("SENT ACK for block %d\n", gotit.blocknum);
 		
 		attempts = 0;	//clear attempts for next chunk
 		
@@ -119,6 +120,7 @@ void writefile (char* filename){
 	
 	if (f == NULL){
 		printf("ERROR: can't open file (client)\n");
+		return;
 	}
 	
 	char* chunk = malloc(1024);
@@ -218,7 +220,11 @@ void writefile (char* filename){
 	
 }
 
-int main(){
+void printusage(){
+	printf("Usage: ./tftpclient [-h hostname] [-p port] -r/-w filename\n");
+}
+
+int main(int argc, char* argv[]){
 
 	//add alarm handler
 	signal (SIGALRM, alarmHandler);
@@ -226,7 +232,57 @@ int main(){
 	//tell OS not to restart system calls on alarm interrupt
 	siginterrupt(SIGALRM, 1);
 	
-	agent = new udpAgent("127.0.0.1", 69);
-	readfile("hw");
+	char* hostname = "127.0.0.1";
+	int port = 69;
+	char* filename = NULL;
+	
+	int todo = -1;	//0: read, 1: write
+	
+	//parse arguments
+	if (argc==1){
+		printusage();
+		return 0;
+	}
+	argv++;
+	argc--;
+	if (strcmp(argv[0], "-h")==0){
+		if (argc==1) {printusage(); return 0;}
+		hostname = argv[1];
+		
+		argv+=2;
+		argc-=2;
+	}
+	if (strcmp(argv[0], "-p")==0){
+		if (argc==1) {printusage(); return 0;}
+		port = atoi(argv[1]);
+		
+		argv+=2;
+		argc-=2;
+	}
+	if (strcmp(argv[0], "-r")==0){
+		if (argc==1) {printusage(); return 0;}
+		filename = argv[1];
+		todo = 0;
+		
+		argv+=2;
+		argc-=2;
+	} else if (strcmp(argv[0], "-w")==0){
+		if (argc==1) {printusage(); return 0;}
+		filename = argv[1];
+		todo = 1;
+		
+		argv+=2;
+		argc-=2;
+	}
+	
+	//do stuff
+	agent = new udpAgent(hostname, port);
+	
+	if (todo==0){
+		readfile(filename);
+	} else if (todo==1){
+		writefile(filename);
+	}
+	
 	return 0;
 }
