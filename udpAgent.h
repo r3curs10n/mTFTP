@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <cstring>
 
@@ -21,6 +22,7 @@ class udpAgent {
 private:
 	int soc;	//socket file descriptor
 	struct sockaddr_in serv_addr;
+	char* prevPacket, int prevLength;
 	
 public:
 
@@ -29,6 +31,8 @@ public:
 	udpAgent (string serverIP, int port){
 		
 		closed = true;
+		prevPacket=NULL;
+		prevLength=0;
 		
 		//set up socket
 		if ((soc=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1){
@@ -50,6 +54,10 @@ public:
 	}
 	
 	size_t send(char* msg, int len){
+	
+		strncpy(prevPacket, msg);
+		prevLength = len;
+	
 		size_t n = sendto(soc, msg, len, 0, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
 		if (n==-1) throw string("Failed to send message");
 		return n;
@@ -61,6 +69,10 @@ public:
 		if (n==0) closed = true;
 		if (n==-1) throw string("Failed to recieve message");
 		return n; 
+	}
+	
+	size_t sendprev(){
+		return send(prevPacket, prevLength);
 	}
 
 };
