@@ -14,6 +14,7 @@
 #include <errno.h>
 
 #include <cstring>
+#include <cstdlib>
 
 using namespace std;
 
@@ -22,7 +23,7 @@ class udpAgent {
 private:
 	int soc;	//socket file descriptor
 	struct sockaddr_in serv_addr;
-	char* prevPacket, int prevLength;
+	char* prevPacket; int prevLength;
 	
 public:
 
@@ -31,7 +32,8 @@ public:
 	udpAgent (string serverIP, int port){
 		
 		closed = true;
-		prevPacket=NULL;
+		prevPacket=malloc(1024);
+		prevPacket[0]=0;
 		prevLength=0;
 		
 		//set up socket
@@ -55,19 +57,22 @@ public:
 	
 	size_t send(char* msg, int len){
 	
-		strncpy(prevPacket, msg);
+		memcpy(prevPacket, msg, len);
 		prevLength = len;
 	
 		size_t n = sendto(soc, msg, len, 0, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
-		if (n==-1) throw string("Failed to send message");
+		//if (n==-1) throw string("Failed to send message");
 		return n;
 	}
 	
 	size_t recv(char* buf, int len){
 		socklen_t sl=sizeof(serv_addr);
+		errno = 0;
+		memset(buf, 0, len);
 		size_t n = recvfrom(soc, buf, len, 0, (struct sockaddr*) &serv_addr, &sl);
-		if (n==0) closed = true;
-		if (n==-1) throw string("Failed to recieve message");
+		
+		//if (n==0) closed = true;
+		//if (n==-1) throw string("Failed to recieve message");
 		return n; 
 	}
 	

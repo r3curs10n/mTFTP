@@ -12,6 +12,18 @@ using namespace std;
 
 //structs to do gruntwork (serialization and deserialization)
 
+#define pRRQ 1
+#define pWRQ 2
+#define pDATA 3
+#define pACK 4
+#define pERROR 5
+
+const char* errormsgs[] = {"Not defined", "File not found", "Access violation", "Disk full or allocation exceeded", "Illegal TFTP operation", "Unknown transfer ID", "File already exists", "No such user"};
+
+int packetType(char* packet){
+	return (int) ntohs( *( (unsigned short*)packet ) );
+}
+
 struct RRQ {
 	unsigned short opcode;
 	char* filename;
@@ -124,7 +136,7 @@ struct DATA {
 		blocknum = _blocknum;
 		datalen = _datalen;
 		opcode = (unsigned short) 3;
-		size = 2 + 2 + datalen + 1;
+		size = 2 + 2 + datalen;
 	}
 	
 	DATA (char* _packet){
@@ -134,7 +146,7 @@ struct DATA {
 		data = malloc(1024);
 		strcpy(data, _packet+2+2);
 		datalen = strlen(data);
-		size = 2 + 2 + datalen + 1;
+		size = 2 + 2 + datalen;
 	}
 	
 	char* toString(){
@@ -196,10 +208,38 @@ struct ERROR {
 	unsigned short errorcode;
 	char* errorstr;
 	
+	char* packet;
+	int size;
+	
 	ERROR (unsigned short _errorcode, char* _errorstr){
+		packet = NULL;
+		errorstr = malloc(1024);
 		errorcode = _errorcode;
-		errorstr = _errorstr;
+		strcpy(errorstr, _errorstr);
 		opcode = (unsigned short) 5;
+		size = 2 + 2 + strlen(errorstr) + 1;
+	}
+	
+	ERROR (char* packet){
+		this->packet = NULL;
+		errorstr = malloc(1024);
+		opcode = 5;
+		errorcode = ntohs(*((unsigned short*)&packet[2]));
+		strcpy(errorstr, packet+4);
+		size = 2 + 2 + strlen(errorstr) + 1;
+	}
+	
+	char* toString(){
+		if (!packet) packet = malloc(size);
+		*((unsigned short*)&packet[0]) = htons(opcode);
+		*((unsigned short*)&packet[2]) = htons(errorcode);
+		strcpy(packet+4, errorstr);
+		return packet;
+	}
+	
+	~ERROR (){
+		if (packet) free(packet);
+		free(errorstr);
 	}
 	
 };
