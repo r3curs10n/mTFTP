@@ -20,13 +20,14 @@ void alarmHandler (int sig){
 
 void readfile (char* filename){
 	
+	//open file
 	FILE* f = fopen(filename, "wb");
 	if (f == NULL){
 		printf("ERROR: Can't open file (client)\n");
 		return;
 	}
 	
-	//open file and send RRQ
+	//send RRQ
 	RRQ req(filename, "octet");
 	agent->send(req.toString(), req.size);
 	alarm(TIMEOUT);
@@ -35,7 +36,7 @@ void readfile (char* filename){
 	
 	int datalen;
 	int blocknum=0;
-	int p;
+	int p, n;
 	char* chunk = malloc(1024);
 	int attempts=0;
 	
@@ -47,7 +48,8 @@ void readfile (char* filename){
 		while (!gotChunk){
 		
 			//wait for DATA
-			int n = agent->recv(chunk, 1024);
+			n = agent->recv(chunk, 1024);
+			
 			if (n == -1){
 				//check for timer interrupt
 				if (errno==EINTR){
@@ -76,7 +78,7 @@ void readfile (char* filename){
 				return;
 			}
 			else if (p==pDATA){
-				DATA d(chunk);
+				DATA d(chunk, n);
 				if (d.blocknum == blocknum+1){
 					//got required block
 					gotChunk = true;
@@ -92,7 +94,7 @@ void readfile (char* filename){
 		alarm(0);	//chunk recieved, alarm can now be turned off
 		
 		//read data
-		DATA recieved(chunk);
+		DATA recieved(chunk, n);
 		datalen = recieved.datalen;
 		
 		//write to file
@@ -108,6 +110,7 @@ void readfile (char* filename){
 		
 	} while (datalen==512);
 	
+	fclose(f);
 	printf("Done!\n");
 	free (chunk);
 	
@@ -213,6 +216,7 @@ void writefile (char* filename){
 		
 	} while (true);
 	
+	fclose(f);
 	printf("Done!\n");
 	
 	free(chunk);
@@ -276,7 +280,13 @@ int main(int argc, char* argv[]){
 	}
 	
 	//do stuff
-	agent = new udpAgent(hostname, port);
+	
+	try {
+		agent = new udpAgent(hostname, port);
+	} catch (string ex){
+		cout<<ex<<endl;
+		return 0;
+	}
 	
 	if (todo==0){
 		readfile(filename);

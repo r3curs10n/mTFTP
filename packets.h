@@ -139,22 +139,22 @@ struct DATA {
 		size = 2 + 2 + datalen;
 	}
 	
-	DATA (char* _packet){
+	DATA (char* _packet, int _size){
 		packet = NULL;	//global
 		opcode = 3;
 		blocknum = ntohs(*((unsigned short*)&_packet[2]));
 		data = malloc(1024);
-		strcpy(data, _packet+2+2);
-		datalen = strlen(data);
-		size = 2 + 2 + datalen;
+		memcpy(data, _packet+2+2, _size-2-2);
+		datalen = _size-2-2;
+		size = _size;
 	}
 	
 	char* toString(){
 		if (!packet) packet = malloc(size);
 		*((unsigned short*)&packet[0]) = htons(opcode);
 		*((unsigned short*)&packet[2]) = htons(blocknum);
-		strncpy(packet+2+2, data, datalen);
-		packet[2+2+datalen]=0;
+		memcpy(packet+2+2, data, datalen);
+		packet[size]=0;
 		return packet; 
 	}
 	
