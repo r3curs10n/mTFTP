@@ -19,7 +19,7 @@ void alarmHandler (int sig){
 	//cout<<"debug"<<endl;
 }
 
-void checkTID(){
+bool checkTID(){
 
 	//check if TID is same as agreed upon
 	if (agent->isSenderPortLocked()){
@@ -29,12 +29,15 @@ void checkTID(){
 			agent->send(e.toString(), e.size);
 			cout<<"ERROR packet sent to unauthorized TID"<<endl;
 			agent->restoreSenderPort();
+			alarm(TIMEOUT);
+			return false;
 		}
 	} else {
 		//first packet from server, lock server's TID
 		agent->lockSenderPort();
 	}
-
+	
+	return true;
 }
 
 void readfile (char* filename){
@@ -89,7 +92,7 @@ void readfile (char* filename){
 			}
 			
 			//check if sender's TID is valid and send error packet if not
-			checkTID();
+			if (!checkTID()) continue;
 			
 			p = packetType(chunk);
 			
@@ -203,7 +206,7 @@ void writefile (char* filename){
 			}
 			
 			//check if sender's TID is valid and send error packet if not
-			checkTID();
+			if (!checkTID()) continue;
 			
 			int p = packetType(ackbuf);
 		
