@@ -24,6 +24,7 @@ private:
 	int soc;	//socket file descriptor
 	struct sockaddr_in serv_addr;
 	char* prevPacket; int prevLength;
+	int lport;
 	
 public:
 
@@ -32,6 +33,7 @@ public:
 	udpAgent (string serverIP, int port){
 		
 		closed = true;
+		lport = -1;
 		prevPacket=malloc(1024);
 		prevPacket[0]=0;
 		prevLength=0;
@@ -78,6 +80,24 @@ public:
 	
 	size_t sendprev(){
 		return send(prevPacket, prevLength);
+	}
+	
+	void lockSenderPort(){
+		lport = ntohs(serv_addr.sin_port);
+	}
+	
+	bool isSenderPortValid(){
+		if (!isSenderPortLocked()) return true;
+		return lport == ntohs(serv_addr.sin_port);
+	}
+	
+	bool isSenderPortLocked(){
+		return lport!=-1;
+	}
+	
+	void restoreSenderPort(){
+		if (!isSenderPortLocked()) return;
+		serv_addr.sin_port = htons(lport);
 	}
 
 };

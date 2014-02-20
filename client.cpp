@@ -19,6 +19,24 @@ void alarmHandler (int sig){
 	//cout<<"debug"<<endl;
 }
 
+void checkTID(){
+
+	//check if TID is same as agreed upon
+	if (agent->isSenderPortLocked()){
+		if (!agent->isSenderPortValid()){
+			//send error
+			ERROR e(5, "");	//unknown transfer ID
+			agent->send(e.toString(), e.size);
+			cout<<"ERROR packet sent to unauthorized TID"<<endl;
+			agent->restoreSenderPort();
+		}
+	} else {
+		//first packet from server, lock server's TID
+		agent->lockSenderPort();
+	}
+
+}
+
 void readfile (char* filename){
 	
 	//open file
@@ -70,6 +88,9 @@ void readfile (char* filename){
 				}
 			}
 			
+			//check if sender's TID is valid and send error packet if not
+			checkTID();
+			
 			p = packetType(chunk);
 			
 			if (p==pERROR){
@@ -88,7 +109,8 @@ void readfile (char* filename){
 					blocknum %= MAX_SEQ_NUM;
 				}
 			} else {
-				//WTF
+				//WTF, ignore packet
+				alarm(TIMEOUT);
 			}
 		
 		}
@@ -180,6 +202,9 @@ void writefile (char* filename){
 				}
 			}
 			
+			//check if sender's TID is valid and send error packet if not
+			checkTID();
+			
 			int p = packetType(ackbuf);
 		
 			
@@ -199,13 +224,13 @@ void writefile (char* filename){
 					blocknum %= MAX_SEQ_NUM;
 				}
 			} else {
-				//WTF?? ignore and stop sending
-				
+				//WTF?? ignore packet
+				alarm(TIMEOUT);
 			}
 			
 		}
 		
-		alarm(0);
+		alarm(0);	//turn off alarm
 		
 		if (lastblockackd) break;
 			
