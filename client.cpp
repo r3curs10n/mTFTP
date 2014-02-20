@@ -100,7 +100,13 @@ void readfile (char* filename){
 		datalen = recieved.datalen;
 		
 		//write to file
-		fwrite(recieved.data, 1, datalen, f);
+		int n = fwrite(recieved.data, 1, datalen, f);
+		if (n != datalen){
+			//can't write to file, out of disk space
+			ERROR e(3, "");	//out of disk space error code
+			agent->send(e.toString(), e.size);
+			return;
+		}
 		
 		//Acknowledge
 		ACK gotit((unsigned short)recieved.blocknum);
@@ -194,6 +200,7 @@ void writefile (char* filename){
 				}
 			} else {
 				//WTF?? ignore and stop sending
+				
 			}
 			
 		}
