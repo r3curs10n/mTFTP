@@ -56,7 +56,7 @@ struct RRQ {
 	}
 	
 	char* toString(){
-		if (!packet) packet = malloc(size);
+		if (!packet) packet = malloc(size+10);
 		*((unsigned short*)&packet[0]) = htons(opcode);
 		strcpy(packet+2, filename);
 		strcpy(packet+2+strlen(filename)+1, mode);
@@ -103,7 +103,7 @@ struct WRQ {
 	}
 	
 	char* toString(){
-		if (!packet) packet = malloc(size);
+		if (!packet) packet = malloc(size+10);
 		*((unsigned short*)&packet[0]) = htons(opcode);
 		strcpy(packet+2, filename);
 		strcpy(packet+2+strlen(filename)+1, mode);
@@ -131,8 +131,7 @@ struct DATA {
 	DATA (unsigned short _blocknum, char* _data, int _datalen){
 		packet = NULL;
 		data = malloc(1024);
-		strncpy(data, _data, _datalen);
-		data[strlen(data)] = 0;
+		memcpy(data, _data, _datalen);
 		blocknum = _blocknum;
 		datalen = _datalen;
 		opcode = (unsigned short) 3;
@@ -150,11 +149,10 @@ struct DATA {
 	}
 	
 	char* toString(){
-		if (!packet) packet = malloc(size);
+		if (!packet) packet = malloc(size+10);
 		*((unsigned short*)&packet[0]) = htons(opcode);
 		*((unsigned short*)&packet[2]) = htons(blocknum);
 		memcpy(packet+2+2, data, datalen);
-		packet[size]=0;
 		return packet; 
 	}
 	
@@ -192,7 +190,7 @@ struct ACK {
 	}
 	
 	char* toString(){
-		if (!packet) packet = malloc(size);
+		if (!packet) packet = malloc(size+10);
 		*((unsigned short*)&packet[0]) = htons(opcode);
 		*((unsigned short*)&packet[2]) = htons(blocknum);
 		return packet; 
@@ -230,7 +228,7 @@ struct ERROR {
 	}
 	
 	char* toString(){
-		if (!packet) packet = malloc(size);
+		if (!packet) packet = malloc(size+10);
 		*((unsigned short*)&packet[0]) = htons(opcode);
 		*((unsigned short*)&packet[2]) = htons(errorcode);
 		strcpy(packet+4, errorstr);
