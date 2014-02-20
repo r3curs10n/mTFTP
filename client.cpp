@@ -8,6 +8,7 @@ using namespace std;
 
 #define MAX_ATTEMPTS 10
 #define TIMEOUT 2
+#define MAX_SEQ_NUM 0x10000
 
 udpAgent* agent;
 
@@ -79,11 +80,12 @@ void readfile (char* filename){
 			}
 			else if (p==pDATA){
 				DATA d(chunk, n);
-				if (d.blocknum == blocknum+1){
+				if (d.blocknum == (blocknum+1) % MAX_SEQ_NUM){
 					//got required block
 					gotChunk = true;
 					printf("Recieved block %d\n", d.blocknum);
 					blocknum++;
+					blocknum %= MAX_SEQ_NUM;
 				}
 			} else {
 				//WTF
@@ -101,7 +103,7 @@ void readfile (char* filename){
 		fwrite(recieved.data, 1, datalen, f);
 		
 		//Acknowledge
-		ACK gotit(recieved.blocknum);
+		ACK gotit((unsigned short)recieved.blocknum);
 		agent->send(gotit.toString(), gotit.size);
 		alarm(TIMEOUT);
 		printf("SENT ACK for block %d\n", gotit.blocknum);
@@ -188,6 +190,7 @@ void writefile (char* filename){
 					if (lastblocksent) lastblockackd = true;
 					printf("RECIEVED ACK for BLOCK %d\n", blocknum);
 					blocknum++;
+					blocknum %= MAX_SEQ_NUM;
 				}
 			} else {
 				//WTF?? ignore and stop sending
